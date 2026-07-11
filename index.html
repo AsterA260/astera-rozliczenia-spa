@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>AsterA · Rozliczenia SPA · Thai Maliwan</title>
 <style>
   :root{
@@ -14,8 +17,9 @@
     --glass:rgba(255,255,255,.55);
   }
   *{box-sizing:border-box;margin:0;padding:0}
+  html{min-height:100%;background:#1e6fa0}
   body{font-family:"Segoe UI","Leelawadee UI","Noto Sans Thai",-apple-system,BlinkMacSystemFont,Roboto,Helvetica,Arial,sans-serif;color:var(--ink);min-height:100vh;line-height:1.55;-webkit-font-smoothing:antialiased;display:flex;flex-direction:column;align-items:center;padding:12px 12px 40px;overflow-x:hidden;
-    background:radial-gradient(900px 720px at 16% 26%,rgba(94,204,190,.28),transparent 58%),radial-gradient(820px 680px at 88% 70%,rgba(120,180,215,.24),transparent 60%),linear-gradient(180deg,#aee6ea 0%,#79cfd6 18%,#4fbcc4 38%,#2fa1b6 58%,#2686ac 78%,#1e6fa0 100%);background-attachment:fixed}
+    background:radial-gradient(900px 720px at 16% 26%,rgba(94,204,190,.28),transparent 58%),radial-gradient(820px 680px at 88% 70%,rgba(120,180,215,.24),transparent 60%),linear-gradient(180deg,#aee6ea 0%,#79cfd6 18%,#4fbcc4 38%,#2fa1b6 58%,#2686ac 78%,#1e6fa0 100%)}
   body::before{content:"";position:fixed;top:0;right:0;bottom:0;left:0;inset:0;z-index:0;pointer-events:none;background:radial-gradient(1300px 620px at 50% -14%,rgba(255,255,255,.6),rgba(255,255,255,0) 62%)}
   body::after{content:"";position:fixed;top:-25%;right:-25%;bottom:-25%;left:-25%;inset:-25%;z-index:0;pointer-events:none;opacity:.26;background:repeating-linear-gradient(101deg,rgba(255,255,255,.09) 0 24px,transparent 24px 140px);-webkit-mask:linear-gradient(180deg,#000,transparent 72%);mask:linear-gradient(180deg,#000,transparent 72%);animation:rays 22s ease-in-out infinite}
   @keyframes rays{0%,100%{transform:translateX(0) skewX(0deg)}50%{transform:translateX(34px) skewX(-2deg)}}
@@ -30,8 +34,8 @@
   .sparkles{position:fixed;top:0;right:0;bottom:0;left:0;inset:0;z-index:0;pointer-events:none}
   .sparkles i{position:absolute;border-radius:50%;opacity:.26;animation:bubble 6s ease-in-out infinite}
   @keyframes bubble{0%,100%{opacity:.08;transform:translateY(7px) scale(.82)}50%{opacity:.4;transform:translateY(-7px) scale(1.15)}}
-  .bloom-wrap{position:relative;width:100%;display:flex;justify-content:center;align-items:flex-end;height:150px;overflow:visible;z-index:1;pointer-events:none;margin:-6px 0 2px}
-  .bloom{width:340px;max-width:76vw;transform-origin:bottom center;opacity:0;filter:drop-shadow(0 10px 30px rgba(233,166,188,.55));transform:translateY(40px) scale(.05);transition:transform 1s linear,opacity 1.2s linear}
+  .bloom-wrap{position:relative;width:100%;display:flex;justify-content:center;align-items:flex-end;height:150px;overflow:visible;z-index:1;pointer-events:none;margin:-6px 0 28px}
+  .bloom{width:320px;max-width:70vw;transform-origin:bottom center;opacity:0;transform:translateY(10px) scale(.05);transition:transform 1s linear,opacity 1.2s linear}
   .bloom svg{width:100%;height:auto;display:block}
   .meadow{position:fixed;left:4px;top:64px;bottom:30px;width:60px;display:flex;flex-direction:column-reverse;align-items:center;z-index:1;pointer-events:none;overflow:hidden}
   .mf{flex:none;margin-top:-10px;transform-origin:bottom center;line-height:0;opacity:.92;filter:drop-shadow(0 3px 6px rgba(15,60,85,.2))}
@@ -363,7 +367,7 @@
   </div>
 
   <div class="head">
-    <div class="wordmark"><svg class="lotus-ico" style="color:var(--rose-d)"><use href="#lotus"/></svg><span>AsterA</span><span class="premium">MALIWAN</span></div>
+    <div class="wordmark"><svg class="lotus-ico" style="color:var(--rose-d)"><use href="#lotus"/></svg><span>AsterA</span><span class="premium">MALIWAN</span><span class="premium" style="background:rgba(255,255,255,.5);color:#7a8b96;letter-spacing:.04em">v3</span></div>
     <div class="tagline" id="tagline"></div>
   </div>
 
@@ -1251,7 +1255,7 @@ Kwoty jako liczby. "wplynelo"=z wyciągu, "zRaportu"=z portalu operatora, "wbite
   /* środkowy kwiat = licznik pracy; postęp jest zapisywany, więc przeżywa odświeżenie */
   const centerBloom=document.querySelector('.bloom');
   function setCenterBloom(p){if(!centerBloom)return;const e=1-Math.pow(1-p,2);
-    centerBloom.style.transform=`translateY(${((1-e)*40).toFixed(1)}px) scale(${(0.05+0.95*e).toFixed(3)})`;
+    centerBloom.style.transform=`translateY(${((1-e)*10).toFixed(1)}px) scale(${(0.05+0.95*e).toFixed(3)})`;
     centerBloom.style.opacity=(Math.min(1,p*10)*0.92).toFixed(2);}
   setCenterBloom(workSec/WORK_SEC);
   setInterval(()=>{if(document.hidden)return;
