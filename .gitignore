@@ -1,0 +1,13 @@
+# DANE — nigdy nie trafiają do repo (zawierają dane klientów)
+kopia_*.json
+rozliczenia_spa_maliwan.json
+rozliczenie_*.json
+podsumowanie_*.json
+test_*.json
+weryfikacja_*.json
+*.backup.json
+
+# systemowe
+.DS_Store
+Thumbs.db
+*.swp

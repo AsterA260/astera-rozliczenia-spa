@@ -1,0 +1,20 @@
+{
+  "_opis": "Przykładowy format importu dnia (ikona 🤖 Agent → Wklej JSON). Dane anonimowe.",
+  "_kody_metod": "g=Gotówka, k=Karta, p=Przelew, b=Blik, pay=PayU, brak=BRAK, booksy=Booksy, sp=Super Prezent, km=Katalog Marzeń, pm=Prezent Marzeń, fv=FAKTURA, inne=Inne/napiwki",
+  "data": "2026-07-09",
+  "spa": {
+    "Zwierzyniecka": {
+      "tx": [
+        {"czas": "12:00", "klient": "Klient A", "metoda": "g", "kwota": 192},
+        {"czas": "13:00", "klient": "Klient B", "metoda": "g", "kwota": 360},
+        {"czas": "14:30", "klient": "Klient C", "metoda": "k", "kwota": 171},
+        {"czas": "16:00", "klient": "Klient D", "metoda": "k", "kwota": 336}
+      ],
+      "raport": 5357,
+      "bony": 4298,
+      "kasetka": 0,
+      "uwagi": "Bony sprzedane: 3898 (nr 7005-7019) + 400 bon katalog marzeń = 4298"
+    },
+    "Szewska": { "tx": [], "raport": 0, "bony": 0, "kasetka": 0, "uwagi": "" }
+  }
+}
