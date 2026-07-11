@@ -18,6 +18,11 @@
   }
   *{box-sizing:border-box;margin:0;padding:0}
   html{min-height:100%;background:#1e6fa0}
+  /* --- DOTYK / iPad: bez zaznaczania tekstu i bez gestow przegladarki na kolach --- */
+  .dial,.wheel,.node,.core,.ring,.rim,.rim2,.face,.dialbox{touch-action:none}
+  .dial,.wheel,.node,.core,.spatitle,.legend{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+  body{-webkit-tap-highlight-color:transparent}
+  input,textarea,select{-webkit-user-select:text;user-select:text}
   body{font-family:"Segoe UI","Leelawadee UI","Noto Sans Thai",-apple-system,BlinkMacSystemFont,Roboto,Helvetica,Arial,sans-serif;color:var(--ink);min-height:100vh;line-height:1.55;-webkit-font-smoothing:antialiased;display:flex;flex-direction:column;align-items:center;padding:12px 12px 40px;overflow-x:hidden;
     background:radial-gradient(900px 720px at 16% 26%,rgba(94,204,190,.28),transparent 58%),radial-gradient(820px 680px at 88% 70%,rgba(120,180,215,.24),transparent 60%),linear-gradient(180deg,#aee6ea 0%,#79cfd6 18%,#4fbcc4 38%,#2fa1b6 58%,#2686ac 78%,#1e6fa0 100%)}
   body::before{content:"";position:fixed;top:0;right:0;bottom:0;left:0;inset:0;z-index:0;pointer-events:none;background:radial-gradient(1300px 620px at 50% -14%,rgba(255,255,255,.6),rgba(255,255,255,0) 62%)}
@@ -367,7 +372,7 @@
   </div>
 
   <div class="head">
-    <div class="wordmark"><svg class="lotus-ico" style="color:var(--rose-d)"><use href="#lotus"/></svg><span>AsterA</span><span class="premium">MALIWAN</span><span class="premium" style="background:rgba(255,255,255,.5);color:#7a8b96;letter-spacing:.04em">v3</span></div>
+    <div class="wordmark"><svg class="lotus-ico" style="color:var(--rose-d)"><use href="#lotus"/></svg><span>AsterA</span><span class="premium">MALIWAN</span><span class="premium" style="background:rgba(255,255,255,.5);color:#7a8b96;letter-spacing:.04em">v4</span></div>
     <div class="tagline" id="tagline"></div>
   </div>
 
@@ -586,7 +591,6 @@
       nd.className='node'+((wd===0||wd===6)?' weekend':'');
       nd.style.left=x+'px';nd.style.top=y+'px';
       nd.innerHTML=`<div class="nc"><span class="dnum">${d}</span><span class="dwd">${WD[lang][wd]}</span></div>`;
-      nd.addEventListener('pointerup',(e)=>{if(!w._dragged){e.stopPropagation();openDay(w.i,idx);}});
       w.wheel.appendChild(nd);w.nodes.push(nd);
     }
     paintNodes(w);
@@ -610,18 +614,48 @@
       <div class="cstat ${done?'done':'todo'}">${done?T.statDone:T.statTodo}</div>
       <button class="open-proc" onclick="event.stopPropagation();openDay(${w.i},${w.active})">${T.openDay}</button>`;}
 
-  function initDrag(w){
-    w._dragged=false;let dragging=false,startAng=0,startRot=0,lastAng=0,vel=0,lastT=0,raf=null;
+  /* uniwersalna obsluga krecenia: mysz + dotyk (iPad) */
+  function makeDrag(w,step,apply,openFn){
+    w._dragged=false;let dragging=false,pid=null,startAng=0,startRot=0,lastAng=0,vel=0,lastT=0,raf=null,dx=0,dy=0;
+    const norm=(a)=>{while(a>180)a-=360;while(a<-180)a+=360;return a;};
     const angleAt=(e)=>{const r=w.dial.getBoundingClientRect();return Math.atan2(e.clientY-(r.top+r.height/2),e.clientX-(r.left+r.width/2))*180/Math.PI;};
-    w.dial.addEventListener('pointerdown',(e)=>{if(e.target.closest('.core'))return;dragging=true;w._dragged=false;cancelAnimationFrame(raf);
-      w.wheel.classList.remove('snap');w.wheel.classList.add('grab');startAng=angleAt(e);startRot=w.rot;lastAng=startAng;lastT=performance.now();w.dial.setPointerCapture(e.pointerId);});
-    w.dial.addEventListener('pointermove',(e)=>{if(!dragging)return;const a=angleAt(e);let d=a-startAng;w.rot=startRot+d;
-      const now=performance.now();vel=(a-lastAng)/Math.max(1,now-lastT);lastAng=a;lastT=now;if(Math.abs(d)>4)w._dragged=true;applyRot(w,false);});
-    const end=()=>{if(!dragging)return;dragging=false;w.wheel.classList.remove('grab');let v=vel*16;
-      (function glide(){if(Math.abs(v)>0.25){w.rot+=v;v*=0.94;applyRot(w,false);raf=requestAnimationFrame(glide);}else{w.rot=Math.round(w.rot/STEP)*STEP;applyRot(w,true);}})();};
-    w.dial.addEventListener('pointerup',end);w.dial.addEventListener('pointercancel',end);
-    w.dial.addEventListener('wheel',(e)=>{e.preventDefault();cancelAnimationFrame(raf);w.rot+=(e.deltaY>0?-STEP:STEP);w.rot=Math.round(w.rot/STEP)*STEP;applyRot(w,true);},{passive:false});
+    w.dial.addEventListener('pointerdown',(e)=>{
+      if(e.target.closest('.core'))return;
+      e.preventDefault();
+      dragging=true;pid=e.pointerId;w._dragged=false;cancelAnimationFrame(raf);
+      dx=e.clientX;dy=e.clientY;vel=0;
+      w.wheel.classList.remove('snap');w.wheel.classList.add('grab');
+      startAng=angleAt(e);startRot=w.rot;lastAng=startAng;lastT=performance.now();
+      try{w.dial.setPointerCapture(e.pointerId);}catch(err){}
+    },{passive:false});
+    w.dial.addEventListener('pointermove',(e)=>{
+      if(!dragging||e.pointerId!==pid)return;
+      e.preventDefault();
+      const a=angleAt(e);w.rot=startRot+norm(a-startAng);
+      const now=performance.now();vel=norm(a-lastAng)/Math.max(1,now-lastT);lastAng=a;lastT=now;
+      if(Math.abs(e.clientX-dx)>7||Math.abs(e.clientY-dy)>7)w._dragged=true;
+      apply(w,false);
+    },{passive:false});
+    const end=(e)=>{
+      if(!dragging)return;dragging=false;w.wheel.classList.remove('grab');
+      try{w.dial.releasePointerCapture(pid);}catch(err){}
+      if(!w._dragged&&e&&e.clientX!=null){          /* stuknięcie, nie przeciąganie */
+        const el=document.elementFromPoint(e.clientX,e.clientY);
+        const nd=el&&el.closest?el.closest('.node'):null;
+        const idx=nd?w.nodes.indexOf(nd):-1;
+        if(idx>=0){w.rot=-idx*step;apply(w,true);openFn(w.i,idx);return;}
+      }
+      let v=vel*16;
+      (function glide(){if(Math.abs(v)>0.25){w.rot+=v;v*=0.94;apply(w,false);raf=requestAnimationFrame(glide);}
+        else{w.rot=Math.round(w.rot/step)*step;apply(w,true);}})();
+    };
+    w.dial.addEventListener('pointerup',end);
+    w.dial.addEventListener('pointercancel',end);
+    w.dial.addEventListener('lostpointercapture',()=>{if(dragging)end(null);});
+    w.dial.addEventListener('wheel',(e)=>{e.preventDefault();cancelAnimationFrame(raf);
+      w.rot+=(e.deltaY>0?-step:step);w.rot=Math.round(w.rot/step)*step;apply(w,true);},{passive:false});
   }
+  function initDrag(w){makeDrag(w,STEP,applyRot,openDay);}
 
   function renderTitles(){const T=L[lang];WHEELS.forEach(w=>{const col=w.i===0?'var(--sky-d)':'var(--rose-d)';
     w.titleEl.innerHTML=editMode
@@ -979,23 +1013,14 @@ Kwoty jako liczby. "wplynelo"=z wyciągu, "zRaportu"=z portalu operatora, "wbite
     for(let m=0;m<12;m++){const base=-90+m*SR,ang=base*Math.PI/180,x=C+R*Math.cos(ang),y=C+R*Math.sin(ang);
       const nd=document.createElement('div');nd.className='node';nd.style.left=x+'px';nd.style.top=y+'px';
       nd.innerHTML=`<div class="nc"><span class="dnum" style="font-size:13px">${MSHORT[lang][m]}</span></div>`;
-      nd.addEventListener('pointerup',(e)=>{if(!w._dragged){e.stopPropagation();openRent(w.i,m);}});w.wheel.appendChild(nd);w.nodes.push(nd);}
+      w.wheel.appendChild(nd);w.nodes.push(nd);}
     paintRentNodes(w);}
   function applyRotRent(w,anim){w.wheel.classList.toggle('snap',!!anim);w.wheel.style.transform=`rotate(${w.rot}deg)`;
     w.nodes.forEach(nd=>{nd.querySelector('.nc').style.transform=`rotate(${-w.rot}deg)`;});
     const idx=((Math.round(-w.rot/30)%12)+12)%12;if(idx!==w.active){w.active=idx;renderRentCore(w);}
     w.nodes.forEach((nd,m)=>nd.classList.toggle('sel',m===w.active));}
   function spinToRent(w,idx,anim){w.rot=-idx*30;applyRotRent(w,anim!==false);}
-  function initDragRent(w){w._dragged=false;let dragging=false,startAng=0,startRot=0,lastAng=0,vel=0,lastT=0,raf=null;
-    const angleAt=(e)=>{const r=w.dial.getBoundingClientRect();return Math.atan2(e.clientY-(r.top+r.height/2),e.clientX-(r.left+r.width/2))*180/Math.PI;};
-    w.dial.addEventListener('pointerdown',(e)=>{if(e.target.closest('.core'))return;dragging=true;w._dragged=false;cancelAnimationFrame(raf);
-      w.wheel.classList.remove('snap');w.wheel.classList.add('grab');startAng=angleAt(e);startRot=w.rot;lastAng=startAng;lastT=performance.now();w.dial.setPointerCapture(e.pointerId);});
-    w.dial.addEventListener('pointermove',(e)=>{if(!dragging)return;const a=angleAt(e);let d=a-startAng;w.rot=startRot+d;
-      const now=performance.now();vel=(a-lastAng)/Math.max(1,now-lastT);lastAng=a;lastT=now;if(Math.abs(d)>4)w._dragged=true;applyRotRent(w,false);});
-    const end=()=>{if(!dragging)return;dragging=false;w.wheel.classList.remove('grab');let v=vel*16;
-      (function glide(){if(Math.abs(v)>0.25){w.rot+=v;v*=0.94;applyRotRent(w,false);raf=requestAnimationFrame(glide);}else{w.rot=Math.round(w.rot/30)*30;applyRotRent(w,true);}})();};
-    w.dial.addEventListener('pointerup',end);w.dial.addEventListener('pointercancel',end);
-    w.dial.addEventListener('wheel',(e)=>{e.preventDefault();cancelAnimationFrame(raf);w.rot+=(e.deltaY>0?-30:30);w.rot=Math.round(w.rot/30)*30;applyRotRent(w,true);},{passive:false});}
+  function initDragRent(w){makeDrag(w,30,applyRotRent,openRent);}
   function paintRentNodes(w){const spa=spaList[w.i];w.nodes.forEach((nd,m)=>{nd.classList.remove('done','loss','filled','today','sel');
     if(rentHasData(curY,m,spa)){const z=rentZysk(curY,m,spa);if(z>0)nd.classList.add('done');else if(z<0)nd.classList.add('loss');else nd.classList.add('filled');}
     if(curY===today.getFullYear()&&m===today.getMonth())nd.classList.add('today');
