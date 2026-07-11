@@ -1231,26 +1231,36 @@ Kwoty jako liczby. "wplynelo"=z wyciągu, "zRaportu"=z portalu operatora, "wbite
     try{localStorage.setItem(GARDEN_KEY,JSON.stringify(garden));}catch(e){}}
   if(!Array.isArray(garden.flowers))garden.flowers=[];if(typeof garden.count!=='number')garden.count=garden.flowers.length;
   function saveGarden(){try{localStorage.setItem(GARDEN_KEY,JSON.stringify(garden));}catch(e){}}
+  /* licznik czasu pracy — ZAPISYWANY, przetrwa odświeżenie strony */
+  const WORK_KEY='spa_worksec',WORK_SEC=600;/* 10 min na kwiat */
+  let workSec=0;try{const s=parseInt(localStorage.getItem(WORK_KEY)||'0',10);if(!isNaN(s)&&s>0&&s<WORK_SEC)workSec=s;}catch(e){workSec=0;}
+  function saveWorkSec(){try{localStorage.setItem(WORK_KEY,String(workSec));}catch(e){}}
   const meadowEl=document.getElementById('meadow');
   function flowerEl(v,isNew){const d=document.createElement('div');d.className='mf'+(isNew?' new':'');
     d.style.width=Math.round(46*(v.s||1))+'px';
     d.innerHTML=`<svg viewBox="0 0 200 180" style="width:100%;height:auto;filter:hue-rotate(${v.h||0}deg) saturate(1.05);transform:rotate(${v.r||0}deg)">${lotusPaths()}</svg>`;return d;}
   function updCount(){let c=document.getElementById('mcount');if(!c){c=document.createElement('div');c.id='mcount';c.className='mcount';document.body.appendChild(c);}
-    c.textContent='🪷 Ogród Maliwan · '+garden.count;c.style.display='';}
+    const left=Math.max(1,Math.ceil((WORK_SEC-workSec)/60));
+    c.textContent='🪷 Ogród Maliwan · '+garden.count+'  🌱 '+left+' min';c.style.display='';}
   function renderMeadow(){if(meadowEl){meadowEl.innerHTML='';garden.flowers.forEach(v=>meadowEl.appendChild(flowerEl(v,false)));}updCount();}
   function harvestFlower(){const v={h:Math.round(Math.random()*110-30),s:+(0.8+Math.random()*0.5).toFixed(2),r:Math.round(Math.random()*24-12)};
     garden.count++;garden.flowers.push(v);if(garden.flowers.length>90)garden.flowers=garden.flowers.slice(-90);saveGarden();
     if(meadowEl)meadowEl.appendChild(flowerEl(v,true));updCount();
-    toast(`🌸 +30 min — nowy kwiat w ogrodzie! (razem: ${garden.count})`);}
+    toast(`🌸 +10 min pracy — nowy kwiat w ogrodzie! (razem: ${garden.count})`);}
   renderMeadow();
-  /* środkowy kwiat = licznik 30 min skupionej pracy */
-  const WORK_SEC=600;/* 10 min na kwiat */let workSec=0;const centerBloom=document.querySelector('.bloom');
+  /* środkowy kwiat = licznik pracy; postęp jest zapisywany, więc przeżywa odświeżenie */
+  const centerBloom=document.querySelector('.bloom');
   function setCenterBloom(p){if(!centerBloom)return;const e=1-Math.pow(1-p,2);
     centerBloom.style.transform=`translateY(${((1-e)*40).toFixed(1)}px) scale(${(0.05+0.95*e).toFixed(3)})`;
     centerBloom.style.opacity=(Math.min(1,p*10)*0.92).toFixed(2);}
-  setCenterBloom(0);
-  setInterval(()=>{if(document.hidden)return;workSec++;setCenterBloom(Math.min(1,workSec/WORK_SEC));
-    if(workSec>=WORK_SEC){workSec=0;harvestFlower();setCenterBloom(0);}},1000);
+  setCenterBloom(workSec/WORK_SEC);
+  setInterval(()=>{if(document.hidden)return;
+    workSec++;setCenterBloom(Math.min(1,workSec/WORK_SEC));
+    if(workSec%10===0)saveWorkSec();      // zapis postępu co 10 s
+    if(workSec%30===0)updCount();          // odświeżenie licznika minut
+    if(workSec>=WORK_SEC){workSec=0;saveWorkSec();harvestFlower();setCenterBloom(0);}
+  },1000);
+  window.addEventListener('beforeunload',saveWorkSec);
   // przypomnienie o kopii zapasowej (gdy są dane, a kopii nie robiono >10 dni)
   setTimeout(()=>{const lb=localStorage.getItem(LB_KEY);const hasAny=Object.keys(data).length>0;
     if(hasAny){const old=!lb||((Date.now()-new Date(lb).getTime())/86400000>10);if(old)toast(L[lang].bkpRemind);}},1600);
